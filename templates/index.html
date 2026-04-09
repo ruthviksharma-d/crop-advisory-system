@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CROP.AI — Crop Advisory System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── Reset & Base ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:    #0A0A0A;
+  --bg2:   #111111;
+  --bg3:   #181818;
+  --border:#2A2A2A;
+  --fg:    #F0EBE1;
+  --fgd:   #888880;
+  --lime:  #C8F542;
+  --red:   #FF4D1C;
+  --cyan:  #1CF5FF;
+  --gold:  #FFD23F;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-mono:    'Space Mono', monospace;
+  --font-body:    'IBM Plex Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  cursor: crosshair;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--lime); }
+
+/* ── Noise overlay ────────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.4;
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+header {
+  border-bottom: 3px solid var(--lime);
+  padding: 0 2.5rem;
+  display: flex; align-items: stretch; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 3.2rem;
+  letter-spacing: 0.06em;
+  color: var(--lime);
+  line-height: 1;
+  padding: 1.1rem 0 0.9rem;
+  display: flex; align-items: center; gap: 12px;
+}
+.logo span { color: var(--fg); }
+.logo-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--fgd);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  align-self: center;
+  letter-spacing: .1em;
+}
+
+nav {
+  display: flex; align-items: center; gap: 0;
+}
+nav a {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--fgd);
+  text-decoration: none;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 0 1.2rem;
+  height: 100%;
+  display: flex; align-items: center;
+  border-left: 1px solid var(--border);
+  transition: color .15s, background .15s;
+}
+nav a:hover, nav a.active {
+  color: var(--lime);
+  background: rgba(200,245,66,.05);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.hero {
+  border-bottom: 1px solid var(--border);
+  padding: 4rem 2.5rem 3rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: end;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 8vw, 7rem);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+}
+.hero-title .accent { color: var(--lime); display: block; }
+.hero-title .accent2 { color: var(--red); }
+
+.hero-meta {
+  display: flex; flex-direction: column; gap: 1rem;
+  padding-bottom: 0.3rem;
+}
+.hero-desc {
+  font-size: 0.9rem; color: var(--fgd);
+  font-weight: 300; max-width: 380px;
+  border-left: 2px solid var(--lime);
+  padding-left: 1rem;
+}
+.hero-stats {
+  display: flex; gap: 2rem;
+}
+.hero-stat-val {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  color: var(--cyan);
+  display: block;
+}
+.hero-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--fgd);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* ── Section tabs ─────────────────────────────────────────────── */
+.tabs {
+  display: flex; border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky; top: 80px; z-index: 90;
+  overflow-x: auto;
+}
+.tab-btn {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fgd);
+  background: none; border: none; cursor: pointer;
+  padding: 1rem 1.8rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 3px solid transparent;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--fg); background: var(--bg2); }
+.tab-btn.active {
+  color: var(--lime);
+  border-bottom-color: var(--lime);
+  background: var(--bg2);
+}
+
+/* ── Main content ─────────────────────────────────────────────── */
+main { padding: 2.5rem; max-width: 1400px; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── Section heading ──────────────────────────────────────────── */
+.sec-head {
+  display: flex; align-items: baseline; gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.sec-head h2 {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  letter-spacing: .04em;
+}
+.sec-head p {
+  font-size: 0.82rem;
+  color: var(--fgd);
+  font-family: var(--font-mono);
+}
+
+/* ── Stat cards grid ──────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--border);
+  margin-bottom: 2.5rem;
+}
+.stat-card {
+  background: var(--bg2);
+  padding: 1.4rem 1.2rem;
+  border: none;
+}
+.stat-card:hover { background: var(--bg3); }
+.stat-val {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  line-height: 1;
+  color: var(--lime);
+}
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--fgd);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* ── Chart box ────────────────────────────────────────────────── */
+.chart-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.chart-box-head {
+  padding: 0.8rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chart-box-title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+.chart-box-tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--fgd);
+}
+.chart-box-body { padding: 1.2rem; }
+.chart-img { width: 100%; display: block; }
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 160px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--fgd);
+  letter-spacing: .1em;
+}
+.loading::after {
+  content: '';
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--border);
+  border-top-color: var(--lime);
+  border-radius: 50%;
+  margin-left: 10px;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Two-col layout ───────────────────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* ── Table ────────────────────────────────────────────────────── */
+.data-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+thead tr {
+  background: var(--bg3);
+  border-bottom: 2px solid var(--lime);
+}
+thead th {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--lime);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  white-space: nowrap;
+}
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+tbody tr:hover { background: var(--bg3); }
+tbody td {
+  padding: 0.6rem 1rem;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+.badge-good  { color: var(--lime); }
+.badge-ok    { color: var(--gold); }
+.badge-bad   { color: var(--red);  }
+
+/* ── Accuracy bar ─────────────────────────────────────────────── */
+.acc-bar-wrap {
+  background: var(--bg3);
+  height: 6px;
+  border-radius: 0;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.acc-bar-fill {
+  height: 100%;
+  background: var(--lime);
+  transition: width 1s ease;
+}
+
+/* ── Big accuracy display ─────────────────────────────────────── */
+.acc-display {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; border: 1px solid var(--border); margin-bottom: 2.5rem;
+}
+.acc-block {
+  background: var(--bg2); padding: 2rem 2rem;
+}
+.acc-block-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fgd);
+  margin-bottom: 0.4rem;
+}
+.acc-block-val {
+  font-family: var(--font-display);
+  font-size: 4rem; line-height: 1;
+  color: var(--lime);
+}
+.acc-block-val.train { color: var(--cyan); }
+.acc-block-sub {
+  font-family: var(--font-mono);
+  font-size: 0.65rem; color: var(--fgd); margin-top: 4px;
+}
+
+/* ── Predict form ─────────────────────────────────────────────── */
+.predict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.input-block {
+  background: var(--bg2);
+  padding: 1.2rem;
+}
+.input-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fgd);
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 0.5rem;
+}
+.input-unit {
+  color: var(--lime);
+  font-size: 0.6rem;
+}
+input[type="number"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  padding: 0.6rem 0.8rem;
+  outline: none;
+  transition: border-color .15s;
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input[type="number"]:focus { border-color: var(--lime); }
+
+.predict-btn {
+  display: block; width: 100%;
+  background: var(--lime);
+  color: #0A0A0A;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: .1em;
+  border: none; cursor: pointer;
+  padding: 1rem 2rem;
+  text-transform: uppercase;
+  transition: background .15s, transform .1s;
+}
+.predict-btn:hover { background: #d9ff5a; }
+.predict-btn:active { transform: scale(0.99); }
+.predict-btn:disabled { background: var(--border); color: var(--fgd); cursor: not-allowed; }
+
+/* ── Result panel ─────────────────────────────────────────────── */
+#result-panel {
+  display: none;
+  border: 1px solid var(--lime);
+  background: var(--bg2);
+  margin-top: 1.5rem;
+  animation: fadeIn .4s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.result-head {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem;
+}
+.result-head-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fgd);
+}
+.result-crop-name {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--lime);
+  flex: 1;
+}
+
+.result-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.result-col {
+  padding: 1.5rem;
+  border-right: 1px solid var(--border);
+}
+.result-col:last-child { border-right: none; }
+
+.top5-row {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.top5-row:last-child { border-bottom: none; }
+.top5-rank {
+  font-family: var(--font-mono);
+  font-size: 0.65rem; color: var(--fgd);
+  min-width: 20px;
+}
+.top5-name {
+  font-family: var(--font-mono);
+  font-size: 0.82rem; flex: 1;
+  text-transform: capitalize;
+}
+.top5-name.winner { color: var(--lime); font-weight: 700; }
+.top5-bar-wrap {
+  width: 100px; height: 5px;
+  background: var(--bg3);
+}
+.top5-bar-fill {
+  height: 100%; background: var(--lime);
+  transition: width .8s ease;
+}
+.top5-bar-fill.second { background: var(--cyan); }
+.top5-bar-fill.third  { background: var(--gold); }
+.top5-bar-fill.other  { background: var(--fgd);  }
+.top5-pct {
+  font-family: var(--font-mono);
+  font-size: 0.72rem; color: var(--fg);
+  min-width: 44px; text-align: right;
+}
+
+/* Radar canvas */
+#radarChart { max-height: 240px; }
+
+.result-col-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fgd);
+  margin-bottom: 1rem;
+}
+
+/* ── Preset buttons ───────────────────────────────────────────── */
+.preset-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 1.2rem;
+}
+.preset-row label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--fgd);
+  align-self: center; margin-right: 4px;
+}
+.preset-btn {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: .05em;
+  background: var(--bg2);
+  color: var(--fgd);
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .12s;
+  text-transform: capitalize;
+}
+.preset-btn:hover { border-color: var(--lime); color: var(--lime); background: rgba(200,245,66,.07); }
+
+/* ── Dataset preview ──────────────────────────────────────────── */
+.dataset-controls {
+  display: flex; gap: 1rem; align-items: center;
+  margin-bottom: 1rem;
+}
+.search-input {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 0.5rem 0.8rem;
+  outline: none; flex: 1;
+  max-width: 300px;
+}
+.search-input:focus { border-color: var(--lime); }
+.page-info {
+  font-family: var(--font-mono);
+  font-size: 0.65rem; color: var(--fgd);
+  margin-left: auto;
+}
+.pagination {
+  display: flex; gap: 4px; margin-top: 0.8rem;
+}
+.page-btn {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--fgd);
+  padding: 4px 10px; cursor: pointer;
+}
+.page-btn:hover, .page-btn.active { border-color: var(--lime); color: var(--lime); }
+
+/* ── Toast ────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: var(--lime); color: #0A0A0A;
+  font-family: var(--font-mono); font-size: 0.72rem;
+  padding: 0.6rem 1.2rem;
+  transform: translateY(100px); opacity: 0;
+  transition: all .3s;
+  z-index: 9999;
+  letter-spacing: .05em;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  header { padding: 0 1rem; }
+  main   { padding: 1.5rem 1rem; }
+  .hero  { grid-template-columns: 1fr; padding: 2rem 1rem; }
+  .two-col { grid-template-columns: 1fr; }
+  .result-body { grid-template-columns: 1fr; }
+  .acc-display { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">CROP<span>.AI</span> <span class="logo-tag">v1.0 / RF</span></div>
+  <nav>
+    <a href="#" class="active" onclick="switchTab('overview',this)">Overview</a>
+    <a href="#" onclick="switchTab('dataset',this)">Dataset</a>
+    <a href="#" onclick="switchTab('results',this)">Results</a>
+    <a href="#" onclick="switchTab('visualise',this)">Visualise</a>
+    <a href="#" onclick="switchTab('predict',this)">Predict</a>
+  </nav>
+</header>
+
+<!-- ── Hero ── -->
+<div class="hero">
+  <div class="hero-title">
+    <span class="accent">Intelligent</span>
+    Crop<br>
+    <span class="accent2">Advisory</span><br>
+    System
+  </div>
+  <div class="hero-meta">
+    <p class="hero-desc">
+      Random Forest classifier trained on soil nutrients and climate parameters.
+      Input your field conditions — get an instant crop recommendation.
+    </p>
+    <div class="hero-stats">
+      <div>
+        <span class="hero-stat-val" id="hero-acc">—</span>
+        <span class="hero-stat-label">Test Accuracy</span>
+      </div>
+      <div>
+        <span class="hero-stat-val" id="hero-crops">22</span>
+        <span class="hero-stat-label">Crop Classes</span>
+      </div>
+      <div>
+        <span class="hero-stat-val" id="hero-rows">—</span>
+        <span class="hero-stat-label">Training Rows</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tabs ── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">01 / Overview</button>
+  <button class="tab-btn" onclick="switchTab('dataset',this)">02 / Dataset</button>
+  <button class="tab-btn" onclick="switchTab('results',this)">03 / Model Results</button>
+  <button class="tab-btn" onclick="switchTab('visualise',this)">04 / Visualise</button>
+  <button class="tab-btn" onclick="switchTab('predict',this)">05 / Predict</button>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════════
+     01 — OVERVIEW
+═══════════════════════════════════════════════════════════ -->
+<section id="sec-overview" class="section active">
+  <div class="sec-head">
+    <h2>Overview</h2>
+    <p>Dataset & model summary</p>
+  </div>
+
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="stat-val" id="ov-rows">—</div><div class="stat-label">Total samples</div></div>
+    <div class="stat-card"><div class="stat-val" id="ov-crops">—</div><div class="stat-label">Crop classes</div></div>
+    <div class="stat-card"><div class="stat-val" id="ov-features">7</div><div class="stat-label">Input features</div></div>
+    <div class="stat-card"><div class="stat-val" id="ov-missing">—</div><div class="stat-label">Missing values</div></div>
+    <div class="stat-card"><div class="stat-val" id="ov-train">—</div><div class="stat-label">Train accuracy</div></div>
+    <div class="stat-card"><div class="stat-val" id="ov-test">—</div><div class="stat-label">Test accuracy</div></div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-box">
+      <div class="chart-box-head">
+        <span class="chart-box-title">Class Distribution</span>
+        <span class="chart-box-tag">samples per crop</span>
+      </div>
+      <div class="chart-box-body">
+        <div id="dist-img"><div class="loading">Loading chart</div></div>
+      </div>
+    </div>
+    <div class="chart-box">
+      <div class="chart-box-head">
+        <span class="chart-box-title">Feature Importance</span>
+        <span class="chart-box-tag">random forest</span>
+      </div>
+      <div class="chart-box-body">
+        <div id="fi-img"><div class="loading">Loading chart</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dataset stats table -->
+  <div class="chart-box">
+    <div class="chart-box-head">
+      <span class="chart-box-title">Feature Statistics</span>
+      <span class="chart-box-tag">describe()</span>
+    </div>
+    <div class="chart-box-body" style="padding:0">
+      <div class="data-table-wrap">
+        <table id="stats-table">
+          <thead><tr id="stats-thead"></tr></thead>
+          <tbody id="stats-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     02 — DATASET
+═══════════════════════════════════════════════════════════ -->
+<section id="sec-dataset" class="section">
+  <div class="sec-head">
+    <h2>Dataset</h2>
+    <p>Crop_recommendation.csv — paginated preview</p>
+  </div>
+
+  <div class="dataset-controls">
+    <input class="search-input" id="ds-search" type="text" placeholder="Filter by crop name…" oninput="filterDataset()">
+    <span class="page-info" id="ds-page-info"></span>
+  </div>
+  <div class="data-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>N</th><th>P</th><th>K</th>
+          <th>Temperature</th><th>Humidity</th><th>pH</th><th>Rainfall</th><th>Crop</th>
+        </tr>
+      </thead>
+      <tbody id="ds-tbody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="ds-pages"></div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     03 — RESULTS
+═══════════════════════════════════════════════════════════ -->
+<section id="sec-results" class="section">
+  <div class="sec-head">
+    <h2>Model Results</h2>
+    <p>Classification report + accuracy</p>
+  </div>
+
+  <div class="acc-display" id="acc-display">
+    <div class="acc-block">
+      <div class="acc-block-label">Training Accuracy</div>
+      <div class="acc-block-val train" id="r-train">—</div>
+      <div class="acc-block-sub">on training split (70%)</div>
+    </div>
+    <div class="acc-block">
+      <div class="acc-block-label">Test Accuracy</div>
+      <div class="acc-block-val" id="r-test">—</div>
+      <div class="acc-block-sub">on held-out split (30%)</div>
+    </div>
+  </div>
+
+  <div class="data-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Crop</th>
+          <th>Precision</th>
+          <th>Recall</th>
+          <th>F1-Score</th>
+          <th>Support</th>
+          <th>Quality</th>
+        </tr>
+      </thead>
+      <tbody id="report-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     04 — VISUALISE
+═══════════════════════════════════════════════════════════ -->
+<section id="sec-visualise" class="section">
+  <div class="sec-head">
+    <h2>Visualise</h2>
+    <p>Matplotlib plots served from Python</p>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-box-head">
+      <span class="chart-box-title">Actual vs Predicted — Line</span>
+      <span class="chart-box-tag">first 100 test samples</span>
+    </div>
+    <div class="chart-box-body">
+      <div id="avp-img"><div class="loading">Generating plot via Python</div></div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-box-head">
+      <span class="chart-box-title">Actual vs Predicted — Scatter</span>
+      <span class="chart-box-tag">100 random samples</span>
+    </div>
+    <div class="chart-box-body">
+      <div id="scat-img"><div class="loading">Generating plot via Python</div></div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-box-head">
+      <span class="chart-box-title">Confusion Matrix</span>
+      <span class="chart-box-tag">22 × 22 heatmap</span>
+    </div>
+    <div class="chart-box-body">
+      <div id="cm-img"><div class="loading">Generating plot via Python</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     05 — PREDICT
+═══════════════════════════════════════════════════════════ -->
+<section id="sec-predict" class="section">
+  <div class="sec-head">
+    <h2>Predict</h2>
+    <p>Enter field parameters — get a crop recommendation</p>
+  </div>
+
+  <div class="preset-row">
+    <label>Quick fill:</label>
+    <button class="preset-btn" onclick="fillPreset('rice')">Rice</button>
+    <button class="preset-btn" onclick="fillPreset('maize')">Maize</button>
+    <button class="preset-btn" onclick="fillPreset('cotton')">Cotton</button>
+    <button class="preset-btn" onclick="fillPreset('grapes')">Grapes</button>
+    <button class="preset-btn" onclick="fillPreset('banana')">Banana</button>
+    <button class="preset-btn" onclick="fillPreset('coffee')">Coffee</button>
+    <button class="preset-btn" onclick="fillPreset('apple')">Apple</button>
+    <button class="preset-btn" onclick="fillPreset('chickpea')">Chickpea</button>
+    <button class="preset-btn" onclick="fillPreset('lentil')">Lentil</button>
+    <button class="preset-btn" onclick="clearForm()">Clear</button>
+  </div>
+
+  <div class="predict-grid">
+    <div class="input-block">
+      <div class="input-label">Nitrogen <span class="input-unit">ratio</span></div>
+      <input type="number" id="inp-N" placeholder="e.g. 82" min="0" max="150" step="0.1">
+    </div>
+    <div class="input-block">
+      <div class="input-label">Phosphorus <span class="input-unit">ratio</span></div>
+      <input type="number" id="inp-P" placeholder="e.g. 40" min="0" max="160" step="0.1">
+    </div>
+    <div class="input-block">
+      <div class="input-label">Potassium <span class="input-unit">ratio</span></div>
+      <input type="number" id="inp-K" placeholder="e.g. 43" min="0" max="250" step="0.1">
+    </div>
+    <div class="input-block">
+      <div class="input-label">Temperature <span class="input-unit">°C</span></div>
+      <input type="number" id="inp-temperature" placeholder="e.g. 23.5" min="-10" max="50" step="0.1">
+    </div>
+    <div class="input-block">
+      <div class="input-label">Humidity <span class="input-unit">%</span></div>
+      <input type="number" id="inp-humidity" placeholder="e.g. 82" min="0" max="100" step="0.1">
+    </div>
+    <div class="input-block">
+      <div class="input-label">pH Value <span class="input-unit">0–14</span></div>
+      <input type="number" id="inp-ph" placeholder="e.g. 6.5" min="0" max="14" step="0.01">
+    </div>
+    <div class="input-block">
+      <div class="input-label">Rainfall <span class="input-unit">mm</span></div>
+      <input type="number" id="inp-rainfall" placeholder="e.g. 205" min="0" max="400" step="0.1">
+    </div>
+  </div>
+
+  <button class="predict-btn" onclick="runPredict()">→ Analyse &amp; Recommend Crop</button>
+
+  <div id="result-panel">
+    <div class="result-head">
+      <div>
+        <div class="result-head-label">Recommended crop</div>
+        <div class="result-crop-name" id="res-crop">—</div>
+      </div>
+    </div>
+    <div class="result-body">
+      <div class="result-col">
+        <div class="result-col-title">Top 5 candidates</div>
+        <div id="top5-list"></div>
+      </div>
+      <div class="result-col" style="border-right:none">
+        <div class="result-col-title">Input parameter profile</div>
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+/* ── Global state ──────────────────────────────────────────────── */
+let dsData = [];
+let dsFiltered = [];
+let dsPage = 1;
+const DS_PER_PAGE = 20;
+
+let radarChart = null;
+let overviewLoaded = false;
+let visualiseLoaded = false;
+
+/* ── Tab switching ─────────────────────────────────────────────── */
+function switchTab(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn, nav a').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+
+  // mark both nav link and tab button
+  document.querySelectorAll('.tab-btn, nav a').forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'"+name+"'"))
+      b.classList.add('active');
+  });
+
+  if (name === 'overview' && !overviewLoaded) loadOverview();
+  if (name === 'dataset')   loadDataset();
+  if (name === 'results')   loadResults();
+  if (name === 'visualise' && !visualiseLoaded) loadVisualise();
+  return false;
+}
+
+/* ── Toast ─────────────────────────────────────────────────────── */
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ── Fetch helpers ─────────────────────────────────────────────── */
+async function fetchJSON(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+function imgTag(b64) {
+  return `<img class="chart-img" src="data:image/png;base64,${b64}">`;
+}
+
+/* ── 01 OVERVIEW ───────────────────────────────────────────────── */
+async function loadOverview() {
+  overviewLoaded = true;
+  try {
+    const [ov, mr] = await Promise.all([fetchJSON('/api/overview'), fetchJSON('/api/model_results')]);
+
+    document.getElementById('ov-rows').textContent    = ov.rows.toLocaleString();
+    document.getElementById('ov-crops').textContent   = ov.crops;
+    document.getElementById('ov-missing').textContent = ov.missing;
+    document.getElementById('ov-train').textContent   = (mr.train_accuracy*100).toFixed(1)+'%';
+    document.getElementById('ov-test').textContent    = (mr.test_accuracy*100).toFixed(1)+'%';
+
+    // Hero bar
+    document.getElementById('hero-acc').textContent  = (mr.test_accuracy*100).toFixed(1)+'%';
+    document.getElementById('hero-rows').textContent = ov.rows.toLocaleString();
+
+    // Stats table
+    const stats = ov.stats;
+    const metrics = ['count','mean','std','min','25%','50%','75%','max'];
+    const thead = document.getElementById('stats-thead');
+    thead.innerHTML = '<th>Metric</th>' + Object.keys(stats).map(f=>`<th>${f}</th>`).join('');
+    const tbody = document.getElementById('stats-tbody');
+    tbody.innerHTML = metrics.map(m =>
+      `<tr><td>${m}</td>` +
+      Object.keys(stats).map(f => `<td>${stats[f][m]}</td>`).join('') +
+      '</tr>'
+    ).join('');
+
+    // Charts
+    const [dist, fi] = await Promise.all([
+      fetchJSON('/api/plot/class_distribution'),
+      fetchJSON('/api/plot/feature_importance'),
+    ]);
+    document.getElementById('dist-img').innerHTML = imgTag(dist.img);
+    document.getElementById('fi-img').innerHTML   = imgTag(fi.img);
+
+  } catch(e) { toast('Overview load error: ' + e.message); }
+}
+
+/* ── 02 DATASET ────────────────────────────────────────────────── */
+async function loadDataset() {
+  if (dsData.length) return renderDataset();
+  try {
+    const r = await fetch('/api/overview');
+    const ov = await r.json();
+    // fetch raw CSV rows via dedicated endpoint
+    const cr = await fetch('/api/dataset');
+    dsData = await cr.json();
+    dsFiltered = dsData;
+    renderDataset();
+  } catch(e) { toast('Dataset load error: ' + e.message); }
+}
+
+function filterDataset() {
+  const q = document.getElementById('ds-search').value.toLowerCase();
+  dsFiltered = q ? dsData.filter(r => r.label.toLowerCase().includes(q)) : dsData;
+  dsPage = 1;
+  renderDataset();
+}
+
+function renderDataset() {
+  const total = dsFiltered.length;
+  const pages = Math.ceil(total / DS_PER_PAGE);
+  const start = (dsPage - 1) * DS_PER_PAGE;
+  const slice = dsFiltered.slice(start, start + DS_PER_PAGE);
+
+  document.getElementById('ds-page-info').textContent =
+    `Showing ${start+1}–${Math.min(start+DS_PER_PAGE, total)} of ${total.toLocaleString()}`;
+
+  const tbody = document.getElementById('ds-tbody');
+  tbody.innerHTML = slice.map((row, i) =>
+    `<tr>
+      <td>${start+i+1}</td>
+      <td>${row.N}</td><td>${row.P}</td><td>${row.K}</td>
+      <td>${row.temperature}</td><td>${row.humidity}</td>
+      <td>${row.ph}</td><td>${row.rainfall}</td>
+      <td style="color:var(--lime);text-transform:capitalize">${row.label}</td>
+    </tr>`
+  ).join('');
+
+  // Pagination
+  const pag = document.getElementById('ds-pages');
+  pag.innerHTML = '';
+  const maxBtns = 8;
+  let startP = Math.max(1, dsPage - Math.floor(maxBtns/2));
+  let endP   = Math.min(pages, startP + maxBtns - 1);
+  if (startP > 1) pag.innerHTML += `<button class="page-btn" onclick="goPage(1)">«</button>`;
+  for (let p = startP; p <= endP; p++) {
+    pag.innerHTML += `<button class="page-btn${p===dsPage?' active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  if (endP < pages) pag.innerHTML += `<button class="page-btn" onclick="goPage(${pages})">»</button>`;
+}
+
+function goPage(p) { dsPage = p; renderDataset(); }
+
+/* ── 03 RESULTS ────────────────────────────────────────────────── */
+async function loadResults() {
+  try {
+    const mr = await fetchJSON('/api/model_results');
+    document.getElementById('r-train').textContent = (mr.train_accuracy*100).toFixed(2)+'%';
+    document.getElementById('r-test').textContent  = (mr.test_accuracy*100).toFixed(2)+'%';
+
+    const tbody = document.getElementById('report-tbody');
+    if (tbody.children.length) return;
+    tbody.innerHTML = mr.rows.map(r => {
+      const f1 = r.f1;
+      const cls = f1 >= 0.95 ? 'badge-good' : f1 >= 0.8 ? 'badge-ok' : 'badge-bad';
+      const bar = `<div class="acc-bar-wrap"><div class="acc-bar-fill" style="width:${f1*100}%"></div></div>`;
+      return `<tr>
+        <td style="text-transform:capitalize;color:var(--fg)">${r.crop}</td>
+        <td class="${cls}">${r.precision.toFixed(3)}</td>
+        <td class="${cls}">${r.recall.toFixed(3)}</td>
+        <td><div class="${cls}" style="margin-bottom:3px">${r.f1.toFixed(3)}</div>${bar}</td>
+        <td>${r.support}</td>
+        <td class="${f1>=0.95?'badge-good':f1>=0.8?'badge-ok':'badge-bad'}">${f1>=0.95?'EXCELLENT':f1>=0.8?'GOOD':'REVIEW'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { toast('Results load error: '+e.message); }
+}
+
+/* ── 04 VISUALISE ──────────────────────────────────────────────── */
+async function loadVisualise() {
+  visualiseLoaded = true;
+  try {
+    const [avp, scat, cm] = await Promise.all([
+      fetchJSON('/api/plot/actual_vs_predicted'),
+      fetchJSON('/api/plot/scatter'),
+      fetchJSON('/api/plot/confusion_matrix'),
+    ]);
+    document.getElementById('avp-img').innerHTML  = imgTag(avp.img);
+    document.getElementById('scat-img').innerHTML = imgTag(scat.img);
+    document.getElementById('cm-img').innerHTML   = imgTag(cm.img);
+  } catch(e) { toast('Visualise load error: '+e.message); }
+}
+
+/* ── 05 PREDICT ────────────────────────────────────────────────── */
+const PRESETS = {
+  rice:     {N:82,  P:40,  K:43,  temperature:23.5, humidity:82,  ph:6.5, rainfall:205},
+  maize:    {N:79,  P:46,  K:44,  temperature:22.0, humidity:65,  ph:6.2, rainfall:100},
+  cotton:   {N:120, P:46,  K:43,  temperature:24.5, humidity:80,  ph:6.9, rainfall:80 },
+  grapes:   {N:23,  P:132, K:200, temperature:24.0, humidity:82,  ph:6.0, rainfall:70 },
+  banana:   {N:100, P:82,  K:50,  temperature:27.0, humidity:80,  ph:6.0, rainfall:105},
+  coffee:   {N:101, P:28,  K:30,  temperature:25.5, humidity:58,  ph:6.8, rainfall:160},
+  apple:    {N:21,  P:134, K:199, temperature:22.0, humidity:92,  ph:5.8, rainfall:113},
+  chickpea: {N:40,  P:68,  K:80,  temperature:18.0, humidity:17,  ph:7.3, rainfall:80 },
+  lentil:   {N:19,  P:70,  K:19,  temperature:24.5, humidity:65,  ph:6.9, rainfall:46 },
+};
+
+function fillPreset(name) {
+  const p = PRESETS[name];
+  Object.entries(p).forEach(([k,v]) => {
+    const el = document.getElementById('inp-'+k);
+    if (el) el.value = v;
+  });
+  document.getElementById('result-panel').style.display = 'none';
+}
+
+function clearForm() {
+  ['N','P','K','temperature','humidity','ph','rainfall'].forEach(f => {
+    document.getElementById('inp-'+f).value = '';
+  });
+  document.getElementById('result-panel').style.display = 'none';
+}
+
+async function runPredict() {
+  const features = ['N','P','K','temperature','humidity','ph','rainfall'];
+  const payload  = {};
+  for (const f of features) {
+    const val = document.getElementById('inp-'+f).value;
+    if (val === '') { toast('Please fill all fields.'); return; }
+    payload[f] = parseFloat(val);
+  }
+
+  const btn = document.querySelector('.predict-btn');
+  btn.disabled = true;
+  btn.textContent = '→ Computing…';
+
+  try {
+    const r = await fetch('/api/predict', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await r.json();
+    if (data.error) { toast('Error: '+data.error); return; }
+
+    // Show panel
+    const panel = document.getElementById('result-panel');
+    panel.style.display = 'block';
+    document.getElementById('res-crop').textContent = data.crop.toUpperCase();
+
+    // Top5
+    const top5 = document.getElementById('top5-list');
+    const colors = ['', 'second', 'third', 'other', 'other'];
+    top5.innerHTML = data.top5_crops.map((c, i) => `
+      <div class="top5-row">
+        <span class="top5-rank">${i+1}.</span>
+        <span class="top5-name${i===0?' winner':''}">${c}</span>
+        <div class="top5-bar-wrap">
+          <div class="top5-bar-fill ${colors[i]}" style="width:${data.top5_probs[i]}%"></div>
+        </div>
+        <span class="top5-pct">${data.top5_probs[i].toFixed(1)}%</span>
+      </div>
+    `).join('');
+
+    // Radar chart
+    const labels = data.features.map(f=>f.toUpperCase());
+    if (radarChart) radarChart.destroy();
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    radarChart = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Your field',
+          data: data.norm_vals,
+          backgroundColor: 'rgba(200,245,66,0.15)',
+          borderColor: '#C8F542',
+          pointBackgroundColor: '#C8F542',
+          pointRadius: 4,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          r: {
+            min: 0, max: 1,
+            grid:      { color: 'rgba(255,255,255,0.08)' },
+            angleLines: { color: 'rgba(255,255,255,0.08)' },
+            ticks: { display: false },
+            pointLabels: {
+              color: '#888880',
+              font: { family: 'Space Mono', size: 10 }
+            }
+          }
+        }
+      }
+    });
+
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    toast('Prediction complete — ' + data.crop.toUpperCase());
+  } catch(e) {
+    toast('Prediction error: '+e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '→ Analyse & Recommend Crop';
+  }
+}
+
+/* ── Boot ──────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  loadOverview();
+});
+</script>
+</body>
+</html>
