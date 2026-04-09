@@ -15,6 +15,9 @@ python app.py
 http://localhost:5000
 ```
 
+## Output
+<img src="images/Picture1.png" width="1000"/>
+
 ## Features
 - **Overview** — dataset stats, class distribution, feature importance charts
 - **Dataset** — paginated, searchable table of all 2200 rows
