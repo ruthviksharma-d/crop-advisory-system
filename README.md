@@ -38,6 +38,44 @@ http://localhost:5000
 - **Visualise** — actual vs predicted (line + scatter) + confusion matrix heatmap
 - **Predict** — enter N/P/K/temp/humidity/pH/rainfall → get crop recommendation with top-5 probabilities + radar chart
 
+## ⚙️ Algorithms & Tech Stack Used
+
+### 🤖 Algorithms
+
+**Random Forest Classifier**
+- An ensemble learning algorithm that combines multiple decision trees to improve prediction accuracy.
+- **Why used:** Provides high accuracy, handles nonlinear relationships well, and reduces overfitting—ideal for agricultural data with multiple environmental factors.
+
+**Decision Trees**
+- The base learners used within the Random Forest to make individual predictions based on feature splits.
+- **Why used:** Easy to interpret and effective for handling structured/tabular data like soil nutrients and weather conditions.
+
+**Bagging (Bootstrap Aggregation)**
+- Technique where multiple subsets of data are sampled to train different trees.
+- **Why used:** Improves model stability and generalization by reducing variance and avoiding overfitting.
+
+---
+
+### 💻 Tech Stack
+
+**Python**
+- Core programming language used for building the application and ML pipeline.
+- **Why used:** Rich ecosystem for machine learning and data processing.
+
+**Flask**
+- Lightweight web framework for building the application interface and API.
+- **Why used:** Simple, flexible, and perfect for deploying ML models as web apps.
+
+**Scikit-learn**
+- Machine learning library used to implement the Random Forest model.
+- **Why used:** Provides efficient, ready-to-use implementations of ML algorithms.
+
+**Pandas & NumPy**
+- Libraries for data manipulation and numerical computations.
+- **Why used:** Essential for preprocessing and handling structured agricultural data.
+
+---
+
 ## File Structure
 ```
 crop_app/
