@@ -17,6 +17,19 @@ http://localhost:5000
 
 ## Output
 <img src="images/Pic1.png" width="1000"/>
+<img src="images/Pic2.png" width="1000"/>
+<img src="images/Pic3.png" width="1000"/>
+<img src="images/Pic4.png" width="1000"/>
+<img src="images/Pic5.png" width="1000"/>
+<img src="images/Pic6.png" width="1000"/>
+<img src="images/Pic7.png" width="1000"/>
+<img src="images/Pic8.png" width="1000"/>
+<img src="images/Pic9.png" width="1000"/>
+<img src="images/Pic10.png" width="1000"/>
+<img src="images/Pic11.png" width="1000"/>
+<img src="images/Pic12.png" width="1000"/>
+<img src="images/Pic13.png" width="1000"/>
+<img src="images/Pic14.png" width="1000"/>
 
 ## Features
 - **Overview** — dataset stats, class distribution, feature importance charts
