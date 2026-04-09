@@ -16,7 +16,7 @@ http://localhost:5000
 ```
 
 ## Output
-<img src="images/Picture1.png" width="1000"/>
+<img src="images/Pic1.png" width="1000"/>
 
 ## Features
 - **Overview** — dataset stats, class distribution, feature importance charts
